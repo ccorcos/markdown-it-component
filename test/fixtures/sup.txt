@@ -1,47 +1,42 @@
 .
-^test^
+[hello]{}
 .
-<p><sup>test</sup></p>
-.
-
-.
-^foo\^
-.
-<p>^foo^</p>
+<p><hello /></p>
 .
 
 .
-2^4 + 3^5
+x [hello]{} x
 .
-<p>2^4 + 3^5</p>
+<p>x <hello /> x</p>
+.
+
+
+.
+x [[hello]]{ x
+.
+<p>x [[hello]]{ x</p>
 .
 
 .
-^foo~bar^baz^bar~foo^
+[hello]{a: 1}
 .
-<p><sup>foo~bar</sup>baz<sup>bar~foo</sup></p>
-.
-
-.
-^\ foo\ ^
-.
-<p><sup> foo </sup></p>
+<p><hello a="1" /></p>
 .
 
 .
-^foo\\\\\\\ bar^
+[hello]{a: "abc"}
 .
-<p><sup>foo\\\ bar</sup></p>
-.
-
-.
-^foo\\\\\\ bar^
-.
-<p>^foo\\\ bar^</p>
+<p><hello a="abc" /></p>
 .
 
 .
-**^foo^ bar**
+[hello]{a: [1,2,3]}
 .
-<p><strong><sup>foo</sup> bar</strong></p>
+<p><hello a="[1,2,3]" /></p>
+.
+
+.
+[hello]{a: [{a:2},2,3]}
+.
+<p><hello a="[{&quot;a&quot;:2},2,3]" /></p>
 .

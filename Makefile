@@ -10,17 +10,14 @@ CURR_HEAD   := $(firstword $(shell git show-ref --hash HEAD | cut -b -6) master)
 GITHUB_PROJ := https://github.com//markdown-it/${NPM_PACKAGE}
 
 
-lint:
-	./node_modules/.bin/eslint --reset .
-
-test: lint
+test:
 	./node_modules/.bin/mocha -R spec
 
 coverage:
 	rm -rf coverage
 	./node_modules/.bin/istanbul cover node_modules/.bin/_mocha
 
-test-ci: lint
+test-ci:
 	istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
 
 browserify:
@@ -35,5 +32,5 @@ browserify:
 		--preamble "/*! ${NPM_PACKAGE} ${NPM_VERSION} ${GITHUB_PROJ} @license MIT */" \
 		> dist/markdown-it-sup.min.js
 
-.PHONY: lint test coverage
-.SILENT: lint test
+.PHONY: test coverage
+.SILENT: test

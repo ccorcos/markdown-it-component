@@ -1,65 +1,130 @@
-// Process ^superscript^
+// Process [component]{a:1, b:2}
 
-'use strict';
+var JSON5 = require("json5")
 
-// same as UNESCAPE_MD_RE plus a space
-var UNESCAPE_RE = /\\([ \\!"#$%&'()*+,.\/:;<=>?@[\]^_`{|}~-])/g;
+// valid component name character
+var componentNameRe = /[a-zA-Z-]/
 
-function superscript(state, silent) {
-  var found,
-      content,
-      token,
-      max = state.posMax,
-      start = state.pos;
+function component(state, silent) {
+	var max = state.posMax
+	var start = state.pos
 
-  if (state.src.charCodeAt(start) !== 0x5E/* ^ */) { return false; }
-  if (silent) { return false; } // don't run any pairs in validation mode
-  if (start + 2 >= max) { return false; }
+	// Search for [
+	if (state.src[start] !== "[") {
+		return false
+	}
+	if (silent) {
+		return false
+	}
 
-  state.pos = start + 1;
+	// Search for ]
+	state.pos++
+	var found = false
+	while (state.pos < max) {
+		var char = state.src[state.pos]
+		if (char === "]") {
+			found = true
+			break
+		}
+		// Assert valid component name character.
+		if (!componentNameRe.test(char)) {
+			break
+		}
+		state.pos++
+	}
 
-  while (state.pos < max) {
-    if (state.src.charCodeAt(state.pos) === 0x5E/* ^ */) {
-      found = true;
-      break;
-    }
+	if (!found) {
+		state.pos = start
+		return false
+	}
 
-    state.md.inline.skipToken(state);
-  }
+	// Parse the component name
+	var name = state.src.slice(start + 1, state.pos)
 
-  if (!found || start + 1 === state.pos) {
-    state.pos = start;
-    return false;
-  }
+	// Assert {
+	state.pos++
+	if (state.src[state.pos] !== "{") {
+		state.pos = start
+		return false
+	}
 
-  content = state.src.slice(start + 1, state.pos);
+	// Search for }
+	var jsonStart = state.pos
+	state.pos++
+	found = false
+	var count = 0
+	while (state.pos < max) {
+		var char = state.src[state.pos]
+		// Handle nested JSON
+		if (char === "{") {
+			count++
+		}
+		// Match close token.
+		if (char === "}") {
+			if (count === 0) {
+				found = true
+				break
+			} else {
+				count--
+			}
+		}
+		state.pos++
+	}
 
-  // don't allow unescaped spaces/newlines inside
-  if (content.match(/(^|[^\\])(\\\\)*\s/)) {
-    state.pos = start;
-    return false;
-  }
+	if (!found) {
+		state.pos = start
+		return false
+	}
 
-  // found!
-  state.posMax = state.pos;
-  state.pos = start + 1;
+	// Parse JSON props.
+	var content = state.src.slice(jsonStart, state.pos + 1)
+	var json
+	try {
+		json = JSON5.parse(content)
+	} catch (e) {
+		state.pos = start
+		return false
+	}
 
-  // Earlier we checked !silent, but this implementation does not need it
-  token         = state.push('sup_open', 'sup', 1);
-  token.markup  = '^';
+	// found!
+	state.posMax = state.pos
+	state.pos = start + 1
 
-  token         = state.push('text', '', 0);
-  token.content = content.replace(UNESCAPE_RE, '$1');
+	var token = state.push("component", name, 0)
+	token.markup = "[" + name + "]{" + content + "}"
+	token.props = json
 
-  token         = state.push('sup_close', 'sup', -1);
-  token.markup  = '^';
-
-  state.pos = state.posMax + 1;
-  state.posMax = max;
-  return true;
+	state.pos = state.posMax + 1
+	state.posMax = max
+	return true
 }
 
+function attrValue(value) {
+	var str = JSON.stringify(value)
+	if (str[0] === '"') {
+		str = str.slice(1)
+	}
+	if (str[str.length - 1] === '"') {
+		str = str.slice(0, str.length - 1)
+	}
+	return str
+}
 
-module.exports = function sup_plugin(md) {
-  md.inline.ruler.after('emphasis', 'sup', superscript);
-};
+function render(tokens, idx, _options, env, self) {
+	var token = tokens[idx]
+	var props = token.props
+	var keys = Object.keys(props)
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i]
+		var value = props[key]
+		token.attrPush([key, attrValue(value)])
+	}
+
+	return self.renderToken(tokens, idx, _options, env, self)
+}
+
+module.exports = function component_plugin(md) {
+	md.inline.ruler.after("image", "component", component)
+	md.renderer.rules["component"] = render
+}
