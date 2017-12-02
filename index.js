@@ -110,21 +110,30 @@ function attrValue(value) {
 	return str
 }
 
-function render(tokens, idx, _options, env, self) {
-	var token = tokens[idx]
-	var props = token.props
-	var keys = Object.keys(props)
+function render(options) {
+	return function(tokens, idx, _options, env, self) {
+		var token = tokens[idx]
+		var props = token.props
 
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i]
-		var value = props[key]
-		token.attrPush([key, attrValue(value)])
+		if (options.jsonData) {
+			token.attrPush(["json-data", JSON.stringify(props)])
+		} else {
+			var keys = Object.keys(props)
+
+			for (var i = 0; i < keys.length; i++) {
+				var key = keys[i]
+				var value = props[key]
+				token.attrPush([key, attrValue(value)])
+			}
+		}
+
+		return self.renderToken(tokens, idx, _options, env, self)
 	}
-
-	return self.renderToken(tokens, idx, _options, env, self)
 }
 
-module.exports = function component_plugin(md) {
-	md.inline.ruler.after("image", "component", component)
-	md.renderer.rules["component"] = render
+module.exports = function(options) {
+	return function(md) {
+		md.inline.ruler.after("image", "component", component)
+		md.renderer.rules["component"] = render(options || {})
+	}
 }

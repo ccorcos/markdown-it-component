@@ -12,6 +12,6 @@ npm install markdown-it markdown-it-component --save
 ```
 
 ```js
-var md = require('markdown-it')().use(require('markdown-it-component'))
+var md = require('markdown-it')().use(require('markdown-it-component')())
 md.render('[hello]{name: "world"}') // => '<hello name="world">'
 ```
