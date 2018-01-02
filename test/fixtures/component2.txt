@@ -1,0 +1,5 @@
+.
+[hello]{x:"1"}
+.
+<p><hello json-data="{&quot;x&quot;:&quot;1&quot;}" /></p>
+.
