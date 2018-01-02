@@ -116,7 +116,7 @@ function render(options) {
 		var props = token.props
 
 		if (options.jsonData) {
-			token.attrPush(["json-data", JSON.stringify(props)])
+			token.attrPush(["json-data", escape(JSON.stringify(props))])
 		} else {
 			var keys = Object.keys(props)
 
